@@ -24,5 +24,5 @@ jobs:
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
           docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}
-          docker build -t justinluong/php-7.1 .
-          docker push justinluong/php-7.1
+          docker build -t justinluong/php-7.2 .
+          docker push justinluong/php-7.2
