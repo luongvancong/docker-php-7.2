@@ -1,29 +1,31 @@
 FROM php:7.2-apache
-RUN apt-get update
-RUN apt-get install -y libmcrypt-dev
-RUN apt-get install zip unzip
+RUN apt update
+RUN apt-get install -y libmcrypt-dev zip unzip libzip-dev libssl-dev
 RUN apt-get install -y \
-		libfreetype6-dev \
-		libjpeg62-turbo-dev \
-		libpng-dev \
-	&& docker-php-ext-install -j$(nproc) iconv \
-	&& docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
-	&& docker-php-ext-install -j$(nproc) gd
-RUN docker-php-ext-install mcrypt
-RUN docker-php-ext-install pdo pdo_mysql
-RUN docker-php-ext-install zip
-RUN docker-php-ext-install mysqli
-RUN docker-php-ext-install mbstring
-RUN docker-php-ext-install exif
+                libfreetype6-dev \
+                libjpeg62-turbo-dev \
+                libpng-dev \
+        && docker-php-ext-install -j$(nproc) iconv \
+        && docker-php-ext-configure gd --with-freetype --with-jpeg \
+        && docker-php-ext-install -j$(nproc) gd \ 
+        && docker-php-ext-install pdo pdo_mysql \
+        && docker-php-ext-install zip \
+        && docker-php-ext-install mysqli \
+        && docker-php-ext-install exif \
+        && docker-php-ext-install ctype \
+        && docker-php-ext-install bcmath \
+        && docker-php-ext-install exif && pecl install mongodb && echo "extension=mongodb.so" > $PHP_INI_DIR/conf.d/mongodb.ini \
+        && docker-php-ext-install opcache
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+RUN a2enmod rewrite
+RUN a2enmod headers
+RUN service apache2 restart
 RUN php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
-#RUN php -r "if (hash_file('sha384', 'composer-setup.php') === 'a5c698ffe4b8e849a443b120cd5ba38043260d5c4023dbf93e1558871f1f07f58274fc6f4c93bcfd858c6bd0775cd8d1') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
 RUN php composer-setup.php
 RUN php -r "unlink('composer-setup.php');"
 RUN mv composer.phar /usr/local/bin/composer
 RUN composer self-update --2
 RUN apt-get install -y git
-RUN a2enmod rewrite
-RUN a2enmod headers
-RUN service apache2 restart
-COPY uploads.ini "$PHP_INI_DIR/conf.d/uploads.ini"
